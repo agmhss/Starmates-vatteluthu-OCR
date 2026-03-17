@@ -14,7 +14,7 @@
     font-family: "Noto Sans Tamil", "Latha", sans-serif;
     background: linear-gradient(180deg, #fafafa 0%, #f5f0ff 100%);
     color: #222;
-    max-width: 900px;
+    max-width: 980px;
     margin: 0 auto;
     padding: 20px;
   }
@@ -28,21 +28,16 @@
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
   h1 { font-size: 1.8em; margin: 0; }
-
-  /* Stylish upload box */
   #file-box {
     border: 3px dashed #6a0dad;
     background: linear-gradient(135deg, #f5f0ff, #faf0fa);
     border-radius: 15px;
-    padding: 25px;
+    padding: 18px;
     text-align: center;
     margin: 20px 0;
     transition: all 0.3s ease;
   }
-  #file-box:hover {
-    background: #f7e8ff;
-    border-color: #4b0082;
-  }
+  #file-box:hover { background: #f7e8ff; border-color: #4b0082; }
   #file {
     display: block;
     margin: 10px auto;
@@ -53,11 +48,26 @@
     cursor: pointer;
     font-size: 16px;
   }
-  #preview {
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .row { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: rgba(255,255,255,0.75);
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .panel h4 { margin: 6px 0 10px; }
+  img, canvas {
     max-width: 100%;
     border: 1px solid #ccc;
     border-radius: 8px;
-    margin-top: 10px;
   }
   textarea {
     width: 100%;
@@ -85,18 +95,58 @@
   button {
     background-color: #4b0082;
     color: white;
-    padding: 10px 16px;
+    padding: 10px 14px;
     border: none;
     border-radius: 6px;
     margin: 6px 4px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15px;
     transition: all 0.3s;
   }
   button:hover { background-color: #6a0dad; }
+  button.secondary { background-color: #333; }
+  button.secondary:hover { background-color: #444; }
+  button.outline {
+    background: transparent;
+    color: #4b0082;
+    border: 2px solid #4b0082;
+  }
+  button.outline:hover {
+    background: rgba(75,0,130,0.08);
+  }
   .feedback-btn { background-color: #008000; }
   .feedback-btn.awful { background-color: #b00020; }
-  #status { margin-top: 6px; color: #007700; font-size: 15px; }
+  #status { margin-top: 8px; color: #007700; font-size: 14px; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .small {
+    font-size: 13px;
+    color: #444;
+    text-align: left;
+    margin: 8px auto 0;
+    max-width: 860px;
+    line-height: 1.35;
+  }
+  label { font-size: 14px; color: #222; }
+  select, input[type="number"], input[type="range"] {
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid #bbb;
+    margin-left: 6px;
+  }
+  .kv {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    justify-content: center;
+    align-items: center;
+    margin: 8px 0 0;
+  }
   footer {
     text-align: center;
     margin-top: 40px;
@@ -114,21 +164,67 @@
     <p>Class 9A (2025-26), AGMHSS, PATTESWARAM</p>
   </header>
 
-  <p style="color:#444;font-size:15px">
-    Upload an image of an old Tamil inscription (Vatteluthu).  
-    The system recognizes and transliterates it into Modern Tamil script.  
+  <p class="small">
+    Upload a clear photo of a stone inscription. Best results: sideways glare avoided, close-up, high resolution, letters fill most of the frame.
+    Use the crop/enhance tools below before OCR.
   </p>
 
-  <!-- Improved upload area -->
   <div id="file-box">
-    <p><strong>📜 Upload Your Inscription Image:</strong></p>
+    <p><strong>Upload Your Inscription Image:</strong></p>
     <input type="file" id="file" accept="image/*" />
-    <button id="run">🔍 Run OCR</button>
-    <button id="downloadTxt">⬇️ .txt</button>
-    <button id="downloadPdf">⬇️ .pdf</button>
+
+    <div class="kv">
+      <label>PSM
+        <select id="psm">
+          <option value="6" selected>6 (block of text)</option>
+          <option value="7">7 (single line)</option>
+          <option value="11">11 (sparse text)</option>
+          <option value="12">12 (sparse + OSD)</option>
+        </select>
+      </label>
+
+      <label>Upscale
+        <select id="scale">
+          <option value="1">1×</option>
+          <option value="1.5" selected>1.5×</option>
+          <option value="2">2×</option>
+          <option value="3">3×</option>
+        </select>
+      </label>
+
+      <label>Threshold
+        <input id="thr" type="range" min="0" max="100" value="52" />
+      </label>
+
+      <label>Crop (x,y,w,h)
+        <input id="cx" type="number" value="0" min="0" style="width:70px">
+        <input id="cy" type="number" value="0" min="0" style="width:70px">
+        <input id="cw" type="number" value="0" min="0" style="width:70px">
+        <input id="ch" type="number" value="0" min="0" style="width:70px">
+      </label>
+    </div>
+
+    <div class="controls">
+      <button id="autoCrop" class="outline">Auto-fill crop (full image)</button>
+      <button id="enhance" class="secondary">Enhance Preview</button>
+      <button id="run">Run OCR (best of multiple passes)</button>
+      <button id="downloadTxt">⬇️ .txt</button>
+      <button id="downloadPdf">⬇️ .pdf</button>
+    </div>
+
+    <div id="status">Ready</div>
   </div>
 
-  <img id="preview" alt="Preview will appear here" />
+  <div class="row">
+    <div class="panel">
+      <h4>Original</h4>
+      <img id="preview" alt="Preview will appear here" />
+    </div>
+    <div class="panel">
+      <h4>Enhanced (used for OCR)</h4>
+      <canvas id="enhanced"></canvas>
+    </div>
+  </div>
 
   <h3>Recognized Vatteluthu Text (Raw OCR)</h3>
   <textarea id="raw" placeholder="OCR output..."></textarea>
@@ -136,16 +232,13 @@
   <h3>Modern Tamil Transliteration (Editable)</h3>
   <textarea id="modern" placeholder="Modern Tamil text will appear here..."></textarea>
 
-  <!-- New Era/Age Display Box -->
-  <div id="eraBox">🕰️ Era of Inscription: <span id="eraText">Unknown</span></div>
+  <div id="eraBox">Era of Inscription: <span id="eraText">Unknown</span></div>
 
-  <div>
+  <div class="controls">
     <button class="feedback-btn" id="awesome">👍 Awesome</button>
     <button class="feedback-btn awful" id="awful">👎 Awful</button>
     <button id="exportData">📤 Export Data</button>
   </div>
-
-  <div id="status">Ready</div>
 
   <footer>
     © 2025 Starmates Vatteluthu OCR | For Tamil Heritage Learners
@@ -159,66 +252,337 @@
     const fileInput = document.getElementById("file");
     const preview = document.getElementById("preview");
     const runBtn = document.getElementById("run");
+    const enhanceBtn = document.getElementById("enhance");
     const rawTa = document.getElementById("raw");
     const modernTa = document.getElementById("modern");
     const status = document.getElementById("status");
     const eraText = document.getElementById("eraText");
 
+    const canvas = document.getElementById("enhanced");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    const psmSel = document.getElementById("psm");
+    const scaleSel = document.getElementById("scale");
+    const thr = document.getElementById("thr");
+
+    const cx = document.getElementById("cx");
+    const cy = document.getElementById("cy");
+    const cw = document.getElementById("cw");
+    const ch = document.getElementById("ch");
+    const autoCropBtn = document.getElementById("autoCrop");
+
     // Load transliteration map
     let map = {};
     try {
-      const resp = await fetch("vatteluthu_map.json");
+      const resp = await fetch("vatteluthu_map.json", { cache: "no-store" });
       map = await resp.json();
     } catch {
-      alert("⚠️ Could not load mapping file.");
+      alert("Could not load mapping file: vatteluthu_map.json");
     }
 
-    // Show preview
-    fileInput.addEventListener("change", ev => {
+    let imgBitmap = null;
+    let imgNatural = { w: 0, h: 0 };
+
+    fileInput.addEventListener("change", async ev => {
       const file = ev.target.files[0];
-      if (file) preview.src = URL.createObjectURL(file);
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+
+      imgBitmap = await createImageBitmap(file);
+      imgNatural = { w: imgBitmap.width, h: imgBitmap.height };
+
+      // default crop: full image
+      cx.value = 0; cy.value = 0; cw.value = imgNatural.w; ch.value = imgNatural.h;
+
+      await renderEnhanced(); // auto-render once
+      status.textContent = "Image loaded. Adjust crop / threshold if needed.";
     });
 
-    // Transliterate text
-    function transliterate(text) {
-      return [...text].map(ch => (map[ch]?.modern || map[ch] || ch)).join('');
+    autoCropBtn.addEventListener("click", async () => {
+      if (!imgBitmap) return alert("Upload an image first.");
+      cx.value = 0; cy.value = 0; cw.value = imgNatural.w; ch.value = imgNatural.h;
+      await renderEnhanced();
+    });
+
+    thr.addEventListener("input", () => renderEnhanced());
+    scaleSel.addEventListener("change", () => renderEnhanced());
+    [cx, cy, cw, ch].forEach(el => el.addEventListener("change", () => renderEnhanced()));
+
+    enhanceBtn.addEventListener("click", async () => {
+      if (!imgBitmap) return alert("Upload an image first.");
+      await renderEnhanced();
+      status.textContent = "Enhanced preview updated.";
+    });
+
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    function getCropRect() {
+      const x = clamp(parseInt(cx.value || "0", 10), 0, imgNatural.w - 1);
+      const y = clamp(parseInt(cy.value || "0", 10), 0, imgNatural.h - 1);
+      const w = clamp(parseInt(cw.value || imgNatural.w, 10), 1, imgNatural.w - x);
+      const h = clamp(parseInt(ch.value || imgNatural.h, 10), 1, imgNatural.h - y);
+      return { x, y, w, h };
     }
 
-    // Detect era based on certain characters (simple simulated logic)
+    // Median filter for salt-and-pepper noise (3x3, fast enough for cropped areas)
+    function medianDenoiseGray(gray, w, h) {
+      const out = new Uint8ClampedArray(gray.length);
+      const window = new Array(9);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let k = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            const yy = clamp(y + dy, 0, h - 1);
+            for (let dx = -1; dx <= 1; dx++) {
+              const xx = clamp(x + dx, 0, w - 1);
+              window[k++] = gray[yy * w + xx];
+            }
+          }
+          window.sort((a, b) => a - b);
+          out[y * w + x] = window[4];
+        }
+      }
+      return out;
+    }
+
+    function autoContrast(gray) {
+      let lo = 255, hi = 0;
+      for (let i = 0; i < gray.length; i++) { const v = gray[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+      if (hi - lo < 10) return gray; // avoid amplifying near-flat images
+      const out = new Uint8ClampedArray(gray.length);
+      const scale = 255 / (hi - lo);
+      for (let i = 0; i < gray.length; i++) out[i] = (gray[i] - lo) * scale;
+      return out;
+    }
+
+    // Simple adaptive threshold using local mean (fast box blur integral image)
+    function adaptiveThreshold(gray, w, h, bias /* -50..50 */) {
+      const integral = new Uint32Array((w + 1) * (h + 1));
+      for (let y = 1; y <= h; y++) {
+        let rowSum = 0;
+        for (let x = 1; x <= w; x++) {
+          rowSum += gray[(y - 1) * w + (x - 1)];
+          integral[y * (w + 1) + x] = integral[(y - 1) * (w + 1) + x] + rowSum;
+        }
+      }
+      const out = new Uint8ClampedArray(gray.length);
+      const win = Math.max(15, Math.floor(Math.min(w, h) / 16) | 1); // odd window
+      const r = (win / 2) | 0;
+
+      for (let y = 0; y < h; y++) {
+        const y0 = clamp(y - r, 0, h - 1);
+        const y1 = clamp(y + r, 0, h - 1);
+        for (let x = 0; x < w; x++) {
+          const x0 = clamp(x - r, 0, w - 1);
+          const x1 = clamp(x + r, 0, w - 1);
+
+          const A = integral[y0 * (w + 1) + x0];
+          const B = integral[y0 * (w + 1) + (x1 + 1)];
+          const C = integral[(y1 + 1) * (w + 1) + x0];
+          const D = integral[(y1 + 1) * (w + 1) + (x1 + 1)];
+          const area = (x1 - x0 + 1) * (y1 - y0 + 1);
+          const mean = (D - B - C + A) / area;
+
+          const v = gray[y * w + x];
+          out[y * w + x] = v < (mean + bias) ? 0 : 255;
+        }
+      }
+      return out;
+    }
+
+    function invertBinary(bin) {
+      const out = new Uint8ClampedArray(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = 255 - bin[i];
+      return out;
+    }
+
+    function toImageDataFromGray(gray, w, h) {
+      const img = new ImageData(w, h);
+      const d = img.data;
+      for (let i = 0, j = 0; i < gray.length; i++, j += 4) {
+        const v = gray[i];
+        d[j] = v; d[j+1] = v; d[j+2] = v; d[j+3] = 255;
+      }
+      return img;
+    }
+
+    async function renderEnhanced() {
+      if (!imgBitmap) return;
+
+      const rect = getCropRect();
+      const scale = parseFloat(scaleSel.value);
+      const tw = Math.max(1, Math.round(rect.w * scale));
+      const th = Math.max(1, Math.round(rect.h * scale));
+      canvas.width = tw;
+      canvas.height = th;
+
+      // draw crop region to canvas with upscale
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(imgBitmap, rect.x, rect.y, rect.w, rect.h, 0, 0, tw, th);
+
+      // read pixels
+      const img = ctx.getImageData(0, 0, tw, th);
+      const d = img.data;
+
+      // grayscale
+      const gray = new Uint8ClampedArray(tw * th);
+      for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+        // perceptual luma
+        gray[p] = (0.2126 * d[i] + 0.7152 * d[i+1] + 0.0722 * d[i+2]) | 0;
+      }
+
+      const den = medianDenoiseGray(gray, tw, th);
+      const con = autoContrast(den);
+
+      // bias from slider: 0..100 -> -30..+30
+      const bias = ((parseInt(thr.value, 10) - 50) / 50) * 30;
+      const bin = adaptiveThreshold(con, tw, th, bias);
+
+      // write back
+      const outImg = toImageDataFromGray(bin, tw, th);
+      ctx.putImageData(outImg, 0, 0);
+    }
+
+    // Transliteration: normalize + longest-match mapping for multi-char keys
+    function normalizeOcrText(s) {
+      return (s || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function transliterate(text) {
+      const s = normalizeOcrText(text);
+      const keys = Object.keys(map).sort((a, b) => b.length - a.length); // longest first
+      let out = "";
+      for (let i = 0; i < s.length; ) {
+        let matched = false;
+        for (const k of keys) {
+          if (k && s.startsWith(k, i)) {
+            const v = map[k];
+            out += (v && typeof v === "object" ? (v.modern ?? k) : (v ?? k));
+            i += k.length;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) { out += s[i]; i++; }
+      }
+      return out;
+    }
+
+    // Detect era based on certain characters (placeholder logic; keep yours but use normalized)
     function detectEra(text) {
-      if (text.includes("𑀮") || text.includes("𑀬")) return "Chola Era (8th–12th Century)";
-      if (text.includes("𑀢") || text.includes("𑀓")) return "Pandya / Pallava Era (6th–9th Century)";
-      if (text.includes("𑀦") || text.includes("𑀩")) return "Chera Era (5th–8th Century)";
+      const t = normalizeOcrText(text);
+      if (t.includes("𑀮") || t.includes("𑀬")) return "Chola Era (8th–12th Century)";
+      if (t.includes("𑀢") || t.includes("𑀓")) return "Pandya / Pallava Era (6th–9th Century)";
+      if (t.includes("𑀦") || t.includes("𑀩")) return "Chera Era (5th–8th Century)";
       return "Unknown / Mixed Period";
     }
 
-    // Run OCR
+    function scoreText(text) {
+      // Heuristic: prefer more Tamil-range chars + fewer junk symbols + longer meaningful output
+      const t = normalizeOcrText(text);
+      if (!t) return -1e9;
+
+      let tamilLike = 0, junk = 0, letters = 0;
+      for (const ch of t) {
+        const cp = ch.codePointAt(0);
+        // Tamil block U+0B80..0BFF OR Vatteluttu-ish in Brahmi ranges used by fonts
+        if ((cp >= 0x0B80 && cp <= 0x0BFF) || (cp >= 0x11000 && cp <= 0x1107F) || (cp >= 0x11100 && cp <= 0x1114F)) tamilLike++;
+        if (/[#@$%^*_=~<>\\]/.test(ch)) junk++;
+        if (/\S/.test(ch)) letters++;
+      }
+      const len = t.length;
+      const lines = t.split("\n").length;
+      return (tamilLike * 3) + (letters * 0.2) + Math.min(len, 200) * 0.05 - junk * 4 - Math.abs(lines - 3) * 0.2;
+    }
+
+    async function ocrFromCanvas(worker, canvasEl) {
+      const psm = parseInt(psmSel.value, 10);
+      await worker.setParameters({
+        tessedit_pageseg_mode: String(psm),
+        preserve_interword_spaces: "1",
+      });
+      const { data } = await worker.recognize(canvasEl);
+      return { text: data.text || "", conf: data.confidence ?? 0 };
+    }
+
+    // Run OCR (best of multiple passes)
     runBtn.addEventListener("click", async () => {
       const file = fileInput.files[0];
-      if (!file) return alert("Please upload an image first.");
-      status.textContent = "Processing OCR...";
+      if (!file || !imgBitmap) return alert("Please upload an image first.");
+
+      status.textContent = "Preparing enhanced image...";
       rawTa.value = "";
       modernTa.value = "";
       eraText.textContent = "Detecting...";
 
       try {
+        await renderEnhanced();
+
         const { createWorker } = Tesseract;
-        const worker = await createWorker({ logger: m => m.status && (status.textContent = m.status + " (" + Math.round(m.progress * 100) + "%)") });
+        const worker = await createWorker({
+          logger: m => {
+            if (m.status) status.textContent = `${m.status} (${Math.round((m.progress || 0) * 100)}%)`;
+          }
+        });
+
         await worker.load();
         await worker.loadLanguage("tam");
         await worker.initialize("tam");
-        const { data: { text } } = await worker.recognize(file);
+
+        // Pass A: enhanced binary as-is
+        status.textContent = "OCR pass 1/3...";
+        const A = await ocrFromCanvas(worker, canvas);
+
+        // Pass B: inverted (sometimes stone engravings are dark-on-light or vice versa)
+        status.textContent = "OCR pass 2/3...";
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          d[i] = 255 - d[i];
+          d[i+1] = 255 - d[i+1];
+          d[i+2] = 255 - d[i+2];
+        }
+        ctx.putImageData(img, 0, 0);
+        const B = await ocrFromCanvas(worker, canvas);
+
+        // Pass C: re-render enhanced (restore) but use a slightly different bias for threshold
+        status.textContent = "OCR pass 3/3...";
+        const oldThr = thr.value;
+        thr.value = String(clamp(parseInt(oldThr, 10) + 8, 0, 100)); // small shift
+        await renderEnhanced();
+        thr.value = oldThr;
+        const C = await ocrFromCanvas(worker, canvas);
+
         await worker.terminate();
 
-        rawTa.value = text.trim();
-        modernTa.value = transliterate(text.trim());
-        eraText.textContent = detectEra(text);
-        status.textContent = "✅ Done!";
+        const candidates = [A, B, C].map(x => ({
+          ...x,
+          norm: normalizeOcrText(x.text),
+          score: scoreText(x.text) + (x.conf || 0) * 0.15
+        })).sort((a, b) => b.score - a.score);
+
+        const best = candidates[0];
+
+        rawTa.value = best.norm;
+        modernTa.value = transliterate(best.norm);
+        eraText.textContent = detectEra(best.norm);
+
+        status.textContent = `Done. Picked best pass (score ${best.score.toFixed(1)}, conf ${Math.round(best.conf)}).`;
       } catch (err) {
         console.error(err);
-        status.textContent = "❌ Error during OCR.";
+        status.textContent = "Error during OCR. Try different crop/threshold/PSM or a sharper photo.";
       }
     });
+
+    // Optional: Your download/export buttons can keep existing logic; not included here to stay focused on OCR accuracy.
+    // You already load jsPDF; you can hook it up exactly as before.
   })();
   </script>
 </body>
